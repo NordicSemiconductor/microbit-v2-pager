@@ -47,12 +47,16 @@
 
 #include <logging/log.h>
 #include <display/mb_display.h>
+#ifdef CONFIG_PAGER_SPEAKER_ENABLED
 #include <drivers/pwm.h>
 #define PWM_FREQ 1000
 #define PWM_PERIOD_US (1000000/PWM_FREQ)
 #define PWM_DEVICE	"PWM_1"
 #define SPEAKER_PIN 0
 #define SOUND_DURATION K_MSEC(1500)
+static struct k_work speaker_work;
+static const struct device *pwm;
+#endif
 #define MAX_MESSAGE_LEN 248 // 247+1 for the Null terminator
 
 #define LOG_MODULE_NAME peripheral_uart
@@ -72,13 +76,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define UART_WAIT_FOR_RX CONFIG_BT_NUS_UART_RX_WAIT_TIME
 
 static K_SEM_DEFINE(ble_init_ok, 0, 1);
-static const struct device *pwm;
+
 static struct bt_conn *current_conn;
 static struct bt_conn *auth_conn;
 
 static const struct device *uart;
 static struct k_work_delayable uart_work;
-static struct k_work speaker_work;
+
 
 struct mb_display *disp;
 struct uart_data_t {
@@ -105,7 +109,7 @@ UART_ASYNC_ADAPTER_INST_DEFINE(async_adapter);
 static const struct device *const async_adapter;
 #endif
 
-
+#ifdef CONFIG_PAGER_SPEAKER_ENABLED
 static void sound(struct k_work *work)
 {
 	LOG_INF("Inside sound work item");
@@ -115,7 +119,7 @@ static void sound(struct k_work *work)
 	/* Disable PWM */
 	pwm_pin_set_usec(pwm, SPEAKER_PIN, 0, 0, 0);
 }
-
+#endif
 static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data)
 {
 	ARG_UNUSED(dev);
@@ -525,7 +529,9 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data,
 			k_fifo_put(&fifo_uart_tx_data, tx);
 		}
 	}
+#ifdef CONFIG_PAGER_SPEAKER_ENABLED
 	k_work_submit(&speaker_work);
+#endif
 }
 
 static struct bt_nus_cb nus_cb = {
@@ -583,15 +589,20 @@ static void configure_gpio(void)
 #endif /* CONFIG_BT_NUS_SECURITY_ENABLED */
 
 }
+
+#ifdef CONFIG_PAGER_SPEAKER_ENABLED
 static void configure_pwm(void){
 
 	pwm=device_get_binding(PWM_DEVICE);
 
 }
+#endif
 void main(void)
 {
 	int err = 0;
+#ifdef CONFIG_PAGER_SPEAKER_ENABLED
 	configure_pwm();
+#endif
 	disp = mb_display_get();
 	configure_gpio();
 	err = uart_init();
@@ -628,7 +639,9 @@ void main(void)
 		LOG_ERR("Advertising failed to start (err %d)", err);
 		return;
 	}
+#ifdef CONFIG_PAGER_SPEAKER_ENABLED
 	k_work_init(&speaker_work, sound);
+#endif
 	for (;;) {
 	k_sleep(K_MSEC(1000));
 	}

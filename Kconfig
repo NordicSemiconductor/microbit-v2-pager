@@ -48,3 +48,14 @@ config BT_NUS_UART_ASYNC_ADAPTER
 	  IRQ interface.
 
 endmenu
+
+
+menu "Micro:Bit v2 Pager"
+
+config PAGER_SPEAKER_ENABLED
+	bool "Enable Speaker"
+	default y
+	help
+	  "Enable Micro:bit v2 Speaker "
+
+endmenu
