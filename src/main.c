@@ -10,12 +10,12 @@
  *   It uses Nordic UART Service (NUS) to receive messages through Bluetooth LE and then forward them- 
  * 	 -to the 5x5 LED matrix on the Micro:bit v2.
  *   How to use:
- *	 1.  Build&flash this firmware on your Micro:bit v2.
- * 	 2.  Using nRF Connect for Mobile:
- * 	 2.1 Scan for devices.
- *	 2.2 Connect to Micro:bit v2 Pager
- *	 2.3 Type your message in the Rx Characteristic box and click send.	 
- * 	 3.  You will first hear a beep for 1.5 seconds followed by your message displayed on the Micro:bit v2 5x5 LED matrix.
+ *  1.  Build&flash this firmware on your Micro:bit v2.
+ *  2.  Using nRF Connect for Mobile:
+ *   2.1 Scan for devices.
+ *   2.2 Connect to Micro:bit v2 Pager
+ *   2.3 Type your message in the Rx Characteristic box and click send.	 
+ *  3.  You will first hear a beep for 1.5 seconds followed by your message displayed on the Micro:bit v2 5x5 LED matrix.
  *	@version 0.1
  *  @author Ali Aljaani
  *  @date 21/March/2022
@@ -105,11 +105,7 @@ UART_ASYNC_ADAPTER_INST_DEFINE(async_adapter);
 static const struct device *const async_adapter;
 #endif
 
-int pwm_write(uint16_t value)
-{
-      
-    return pwm_pin_set_usec(pwm,0,PWM_PERIOD_US,value,0);
-}	
+
 static void sound(struct k_work *work)
 {
 	LOG_INF("Inside sound work item");
