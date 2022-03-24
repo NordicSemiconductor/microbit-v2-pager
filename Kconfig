@@ -56,6 +56,20 @@ config PAGER_SPEAKER_ENABLED
 	bool "Enable Speaker"
 	default y
 	help
-	  "Enable Micro:bit v2 Speaker "
+	  Enable Micro:bit v2 Speaker.
+
+if PAGER_SPEAKER_ENABLED
+config PAGER_BEEP_FREQUENCY
+	int "Frequency of the beep"
+	default 1000
+	help
+	  Frequency of the PWM signal driving the speaker in hertz.
+
+config PAGER_BEEP_DURATION
+	int "Duration of the beep"
+	default 1500
+	help
+	  Duration of the beep in milliseconds.
+endif
 
 endmenu

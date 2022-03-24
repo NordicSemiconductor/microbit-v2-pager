@@ -49,11 +49,10 @@
 #include <display/mb_display.h>
 #ifdef CONFIG_PAGER_SPEAKER_ENABLED
 #include <drivers/pwm.h>
-#define PWM_FREQ 1000
-#define PWM_PERIOD_US (1000000/PWM_FREQ)
+#define PWM_PERIOD_US (1000000/CONFIG_PAGER_BEEP_FREQUENCY)
 #define PWM_DEVICE	"PWM_1"
 #define SPEAKER_PIN 0
-#define SOUND_DURATION K_MSEC(1500)
+#define SOUND_DURATION K_MSEC(CONFIG_PAGER_BEEP_DURATION)
 static struct k_work speaker_work;
 static const struct device *pwm;
 #endif
