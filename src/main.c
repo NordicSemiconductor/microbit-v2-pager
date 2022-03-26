@@ -6,7 +6,7 @@
 
 /** @file
  *  @brief Micro:bit v2 Pager
- *   The pager allows you to send text messages to the 5x5 LED matrix on the Micro:bit v2 using your mobile phone. 
+ *   The pager allows you to send text messages to the 5x5 LED matrix on the Micro:bit v2 using your smartphone. 
  *   It uses Nordic UART Service (NUS) to receive messages through Bluetooth LE and then forward them- 
  * 	 -to the 5x5 LED matrix on the Micro:bit v2.
  *   How to use:
@@ -493,7 +493,7 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data,
 	strncat(bt_message,data,len);
 	// Print the message on the Mico:bit v2 matrix
 	mb_display_print(disp, MB_DISPLAY_MODE_SCROLL,
-			 1U * MSEC_PER_SEC,"%s",bt_message);
+			 CONFIG_PAGER_CHARACTER_DURATION,"%s",bt_message);
 	for (uint16_t pos = 0; pos != len;) {
 		struct uart_data_t *tx = k_malloc(sizeof(*tx));
 
