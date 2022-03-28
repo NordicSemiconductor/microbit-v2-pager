@@ -62,12 +62,14 @@ if PAGER_SPEAKER_ENABLED
 config PAGER_BEEP_FREQUENCY
 	int "Frequency of the beep"
 	default 1000
+	range 20 20000
 	help
 	  Frequency of the beep played when a message is received in hertz.
 
 config PAGER_BEEP_DURATION
 	int "Duration of the beep"
 	default 1500
+	range 200 20000
 	help
 	  Duration of the beep played when a message is received in milliseconds.
 endif
@@ -75,6 +77,7 @@ endif
 config PAGER_CHARACTER_DURATION
 	int "Character duration on the matirx"
 	default 1000
+	range 300 10000
 	help
 	  Duration how long to show each character 
 	  on the 5x5 matrix display in milliseconds.
