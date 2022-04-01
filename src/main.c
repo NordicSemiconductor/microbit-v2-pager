@@ -16,10 +16,10 @@
  *   2.2 Connect to Micro:bit v2 Pager
  *   2.3 Type your message in the Rx Characteristic box and click send.	 
  *  3.  You will first hear a beep for 1.5 seconds followed by your message displayed on the Micro:bit v2 5x5 LED matrix.
- *	@version 0.1
+ *	@version 0.2
  *  @author Ali Aljaani
- *  @date 21/March/2022
-* 	@note Data is also forwarded to UART.  
+ *  @date 01/April/2022
+* 	@note Data is also forwarded to UART.
  */
 #include "uart_async_adapter.h"
 
@@ -67,8 +67,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN	(sizeof(DEVICE_NAME) - 1)
 
-#define KEY_PASSKEY_ACCEPT DK_BTN1_MSK
-#define KEY_PASSKEY_REJECT DK_BTN2_MSK
+#define BUTTON_A	 DK_BTN1_MSK
+#define BUTTON_B	 DK_BTN2_MSK
 
 #define UART_BUF_SIZE CONFIG_BT_NUS_UART_BUFFER_SIZE
 #define UART_WAIT_FOR_BUF_DELAY K_MSEC(50)
@@ -77,13 +77,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static K_SEM_DEFINE(ble_init_ok, 0, 1);
 
 static struct bt_conn *current_conn;
-static struct bt_conn *auth_conn;
 
 static const struct device *uart;
 static struct k_work_delayable uart_work;
+static char bt_message[MAX_MESSAGE_LEN] ={0};
 
-
-struct mb_display *disp;
+static struct mb_display *disp;
 struct uart_data_t {
 	void *fifo_reserved;
 	uint8_t data[UART_BUF_SIZE];
@@ -377,10 +376,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	LOG_INF("Disconnected: %s (reason %u)", log_strdup(addr), reason);
 
-	if (auth_conn) {
-		bt_conn_unref(auth_conn);
-		auth_conn = NULL;
-	}
 
 	if (current_conn) {
 		bt_conn_unref(current_conn);
@@ -388,53 +383,13 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-#ifdef CONFIG_BT_NUS_SECURITY_ENABLED
-static void security_changed(struct bt_conn *conn, bt_security_t level,
-			     enum bt_security_err err)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	if (!err) {
-		LOG_INF("Security changed: %s level %u", log_strdup(addr),
-			level);
-	} else {
-		LOG_WRN("Security failed: %s level %u err %d", log_strdup(addr),
-			level, err);
-	}
-}
-#endif
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected    = connected,
 	.disconnected = disconnected,
-#ifdef CONFIG_BT_NUS_SECURITY_ENABLED
-	.security_changed = security_changed,
-#endif
+
 };
 
-#if defined(CONFIG_BT_NUS_SECURITY_ENABLED)
-static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_INF("Passkey for %s: %06u", log_strdup(addr), passkey);
-}
-
-static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	auth_conn = bt_conn_ref(conn);
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_INF("Passkey for %s: %06u", log_strdup(addr), passkey);
-	LOG_INF("Press Button 1 to confirm, Button 2 to reject.");
-}
 
 
 static void auth_cancel(struct bt_conn *conn)
@@ -447,50 +402,25 @@ static void auth_cancel(struct bt_conn *conn)
 }
 
 
-static void pairing_complete(struct bt_conn *conn, bool bonded)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_INF("Pairing completed: %s, bonded: %d", log_strdup(addr),
-		bonded);
-}
-
-
-static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_INF("Pairing failed conn: %s, reason %d", log_strdup(addr),
-		reason);
-}
 
 
 static struct bt_conn_auth_cb conn_auth_callbacks = {
-	.passkey_display = auth_passkey_display,
-	.passkey_confirm = auth_passkey_confirm,
+
 	.cancel = auth_cancel,
-	.pairing_complete = pairing_complete,
-	.pairing_failed = pairing_failed
+
 };
-#else
-static struct bt_conn_auth_cb conn_auth_callbacks;
-#endif
+
 
 static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data,
 			  uint16_t len)
 {
 	int err;
 	char addr[BT_ADDR_LE_STR_LEN] = {0};
-	char bt_message[MAX_MESSAGE_LEN] ={0};
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, ARRAY_SIZE(addr));
 
 	LOG_INF("Received data from: %s", log_strdup(addr));
 	LOG_HEXDUMP_INF(data,len,"Recived Data");
-	strncat(bt_message,data,len);
+	strncpy(bt_message,data,len);
 	// Print the message on the Mico:bit v2 matrix
 	mb_display_print(disp, MB_DISPLAY_MODE_SCROLL,
 			 CONFIG_PAGER_CHARACTER_DURATION,"%s",bt_message);
@@ -545,47 +475,34 @@ void error(void)
 	}
 }
 
-#ifdef CONFIG_BT_NUS_SECURITY_ENABLED
-static void num_comp_reply(bool accept)
-{
-	if (accept) {
-		bt_conn_auth_passkey_confirm(auth_conn);
-		LOG_INF("Numeric Match, conn %p", (void *)auth_conn);
-	} else {
-		bt_conn_auth_cancel(auth_conn);
-		LOG_INF("Numeric Reject, conn %p", (void *)auth_conn);
-	}
 
-	bt_conn_unref(auth_conn);
-	auth_conn = NULL;
-}
 
 void button_changed(uint32_t button_state, uint32_t has_changed)
 {
 	uint32_t buttons = button_state & has_changed;
 
-	if (auth_conn) {
-		if (buttons & KEY_PASSKEY_ACCEPT) {
-			num_comp_reply(true);
+		if (buttons & BUTTON_B) {
+			 //Print recently received message
+			 if(strlen(bt_message))
+			 mb_display_print(disp, MB_DISPLAY_MODE_SCROLL,
+			 CONFIG_PAGER_CHARACTER_DURATION,"%s",bt_message);
 		}
 
-		if (buttons & KEY_PASSKEY_REJECT) {
-			num_comp_reply(false);
+		if (buttons & BUTTON_A) {
+			//Delete recently received message
+			memset(bt_message,0,sizeof(bt_message));
+
 		}
-	}
 }
-#endif /* CONFIG_BT_NUS_SECURITY_ENABLED */
 
 static void configure_gpio(void)
 {
 	int err;
 
-#ifdef CONFIG_BT_NUS_SECURITY_ENABLED
 	err = dk_buttons_init(button_changed);
 	if (err) {
 		LOG_ERR("Cannot init buttons (err: %d)", err);
 	}
-#endif /* CONFIG_BT_NUS_SECURITY_ENABLED */
 
 }
 
