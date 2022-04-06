@@ -5,17 +5,19 @@
  */
 
 /** @file
- *  @brief Micro:bit v2 Pager
- *   The pager allows you to send text messages to the 5x5 LED matrix on the Micro:bit v2 using your smartphone. 
+ *  @brief micro:bit v2 Pager
+ *   The pager allows you to send text messages to the 5x5 LED matrix on the micro:bit v2 using your smartphone. 
  *   It uses Nordic UART Service (NUS) to receive messages through Bluetooth LE and then forward them- 
- * 	 -to the 5x5 LED matrix on the Micro:bit v2.
+ * 	 -to the 5x5 LED matrix on the micro:bit v2.
  *   How to use:
- *  1.  Build&flash this firmware on your Micro:bit v2.
+ *  1.  Build&flash this firmware on your micro:bit v2.
  *  2.  Using nRF Connect for Mobile:
  *   2.1 Scan for devices.
- *   2.2 Connect to Micro:bit v2 Pager
+ *   2.2 Connect to micro:bit v2 Pager
  *   2.3 Type your message in the Rx Characteristic box and click send.	 
- *  3.  You will first hear a beep for 1.5 seconds followed by your message displayed on the Micro:bit v2 5x5 LED matrix.
+ *  3.  You will first hear a beep for 1.5 seconds followed by your message displayed on the micro:bit v2 5x5 LED matrix.
+ * (Optional) micro:bit v2 interface:
+ *  You could re-display the recently received message(if one exists) by pressing button B. Pressing button A will delete the recently received message.
  *	@version 0.2
  *  @author Ali Aljaani
  *  @date 01/April/2022
